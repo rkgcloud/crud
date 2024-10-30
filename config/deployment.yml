@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-postgres-crud
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: go-postgres-crud
+  template:
+    metadata:
+      labels:
+        app: go-postgres-crud
+    spec:
+      containers:
+        - name: go-postgres-crud
+          image: go-postgres-crud:latest  # Ensure this matches your Docker image name and tag
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DATABASE_URL
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: PORT
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
