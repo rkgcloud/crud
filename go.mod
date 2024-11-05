@@ -1,4 +1,4 @@
-module rkgcloud/crud
+module github.com/rkgcloud/crud
 
 go 1.23.2
 

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-postgres-crud-service
+spec:
+  type: ClusterIP
+  selector:
+    app: go-postgres-crud
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

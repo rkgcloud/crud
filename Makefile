@@ -92,7 +92,7 @@ test: fmt vet ## Run unit tests only.
 
 .PHONY: deploy
 deploy: test ## Deploy crud to the K8s cluster specified in ~/.kube/config.
-	$(KAPP) deploy -a crud -n kube-system -f <($(KO) resolve -f <( $(YTT) -f app-config)) $(KAPP_ARGS)
+	$(KAPP) deploy -a crud -n kube-system -f <($(KO) resolve -f <( $(YTT) -f config)) $(KAPP_ARGS)
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KAPP) delete -a crud -n kube-system $(KAPP_ARGS)
