@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: go-postgres-crud
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: go-postgres-crud
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: go-postgres-crud
-          image: go-postgres-crud:latest  # Ensure this matches your Docker image name and tag
+          image: ko://github.com/rkgcloud/crud/cmd/ # Ensure this matches your Docker image name and tag
           ports:
             - containerPort: 8080
           env:
@@ -28,6 +28,15 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: PORT
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               memory: "64Mi"

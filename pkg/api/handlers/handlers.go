@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"rkgcloud/crud/pkg/models"
+
+	"github.com/rkgcloud/crud/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -10,8 +11,16 @@ import (
 
 // CreateUser creates a new user in the database
 func CreateUser(c *gin.Context, db *gorm.DB) {
+
+	//body, err := io.ReadAll(c.Request.Body)
+	//if err != nil {
+	//	log.Printf("Error parsing request body: %v\n", err)
+	//}
+	//log.Printf("Request body: %v\n", string(body))
+
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

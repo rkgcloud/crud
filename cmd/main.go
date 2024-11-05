@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"os"
-	"rkgcloud/crud/pkg/api/handlers"
-	"rkgcloud/crud/pkg/database"
-	models "rkgcloud/crud/pkg/models"
+
+	"github.com/rkgcloud/crud/pkg/api/handlers"
+	"github.com/rkgcloud/crud/pkg/database"
+	models "github.com/rkgcloud/crud/pkg/models"
 
 	"github.com/gin-gonic/gin"
 )
