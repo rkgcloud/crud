@@ -90,9 +90,14 @@ run: vet tidy ## Runs the service in command line
 test: fmt vet ## Run unit tests only.
 	go test ./... -short -coverprofile cover.out
 
+.PHONY: dist
+dist: test ## Creates CRUD app deployment resources
+	$(YTT)  -f config/ > dist/crud-app.yml
+
+
 .PHONY: deploy
-deploy: test ## Deploy crud to the K8s cluster specified in ~/.kube/config.
-	$(KAPP) deploy -a crud -n kube-system -f <($(KO) resolve -f <( $(YTT) -f config)) $(KAPP_ARGS)
+deploy: test dist ## Deploy CRUD to the K8s cluster specified in ~/.kube/config.
+	$(KAPP) deploy -a crud -n kube-system -f <($(KO) resolve -f <( $(YTT) -f dist/crud-app.yml)) $(KAPP_ARGS)
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KAPP) delete -a crud -n kube-system $(KAPP_ARGS)
