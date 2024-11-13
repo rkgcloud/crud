@@ -1,0 +1,38 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: crud-app
+  name: crud-app
+
+
+#@overlay/match by=overlay.subset({"apiVersion": "v1", "kind": "PersistentVolumeClaim"})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: crud-app
+
+#@overlay/match by=overlay.subset({"apiVersion": "v1", "kind": "ConfigMap"})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: crud-app
+
+
+#@overlay/match by=overlay.subset({"apiVersion": "apps/v1", "kind": "Deployment"}), expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: crud-app
+
+
+#@overlay/match by=overlay.subset({"apiVersion": "v1", "kind": "Service"}), expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: crud-app
+

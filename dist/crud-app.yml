@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: crud-app
+data:
+  DATABASE_URL: postgres://postgres:postgres@postgres-service:5432/testdb?sslmode=disable
+  PORT: "8080"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+  namespace: crud-app
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: crud-app
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: crud-app
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:17@sha256:8d3be35b184e70d81e54cbcbd3df3c0b47f37d06482c0dd1c140db5dbcc6a808
+        env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        - name: POSTGRES_DB
+          value: testdb
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-storage
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pv-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-postgres-crud
+  namespace: crud-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-postgres-crud
+  template:
+    metadata:
+      labels:
+        app: go-postgres-crud
+    spec:
+      containers:
+      - name: go-postgres-crud
+        image: ko://github.com/rkgcloud/crud/cmd/
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DATABASE_URL
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: PORT
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: 64Mi
+            cpu: 250m
+          limits:
+            memory: 128Mi
+            cpu: 500m
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: crud-app
+  name: crud-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-postgres-crud-service
+  namespace: crud-app
+spec:
+  type: ClusterIP
+  selector:
+    app: go-postgres-crud
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
