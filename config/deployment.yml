@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: go-postgres-crud
+  namespace: crud-system
+  annotations:
+    kapp.k14s.io/change-group: db
 spec:
   replicas: 1
   selector:
