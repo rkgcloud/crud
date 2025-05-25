@@ -1,0 +1,9 @@
+#@ load("@ytt:data", "data")
+---
+global:
+  postgresql:
+    auth:
+      username: #@ data.values.dbuser
+      password: #@ data.values.dbpwd
+      database: #@ data.values.dbname
+      postgresPassword: #@ data.values.dbpwd

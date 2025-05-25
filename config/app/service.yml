@@ -1,3 +1,5 @@
+#@ load("@ytt:data", "data")
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,5 +11,5 @@ spec:
     app: go-postgres-crud
   ports:
     - protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: #@ data.values.app_port
+      targetPort: #@ data.values.app_port

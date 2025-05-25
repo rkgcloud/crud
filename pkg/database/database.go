@@ -11,6 +11,7 @@ import (
 // ConnectDB connects to the PostgresSQL database
 func ConnectDB() (*gorm.DB, error) {
 	dsn := os.Getenv("DATABASE_URL")
+	log.Println("Connecting to database:", dsn)
 	if dsn == "" {
 		dsn = "host=localhost user=postgres password=postgres dbname=testdb port=5432 sslmode=disable"
 	}

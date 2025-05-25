@@ -1,0 +1,6 @@
+#@data/values-schema
+---
+app_port: 8080
+dbname: dev-db
+dbuser: dev-usr
+dbpwd: pwd
