@@ -1,7 +1,19 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: crud-system
+  name: crud-system
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: go-postgres-crud
+  namespace: crud-system
+  annotations:
+    kapp.k14s.io/change-group: db
 spec:
   replicas: 1
   selector:
@@ -14,9 +26,9 @@ spec:
     spec:
       containers:
         - name: go-postgres-crud
-          image: ko://github.com/rkgcloud/crud/cmd/ # Ensure this matches your Docker image name and tag
+          image: ko://github.com/rkgcloud/crud/cmd
           ports:
-            - containerPort: 8080
+            - containerPort: #@ data.values.app_port
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -43,4 +55,4 @@ spec:
               cpu: "250m"
             limits:
               memory: "128Mi"
-              cpu: "500m"
+

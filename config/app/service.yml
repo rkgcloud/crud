@@ -1,12 +1,15 @@
+#@ load("@ytt:data", "data")
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: go-postgres-crud-service
+  namespace: crud-system
 spec:
   type: ClusterIP
   selector:
     app: go-postgres-crud
   ports:
     - protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: #@ data.values.app_port
+      targetPort: #@ data.values.app_port

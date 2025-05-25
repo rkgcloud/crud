@@ -1,0 +1,19 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: postgres
+    app.kubernetes.io/name: postgresql
+  name: postgres
+
+#@overlay/match by=overlay.subset({"apiVersion": "apps/v1", "kind": "StatefulSet", "metadata":{"name": "pgsql-postgresql"}})
+---
+metadata:
+  #@overlay/match missing_ok=True
+  annotations:
+    #@overlay/match missing_ok=True
+    kapp.k14s.io/change-group: db

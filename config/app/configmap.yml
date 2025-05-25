@@ -1,0 +1,14 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: crud-system
+data:
+  DATABASE_URL: #@ "host=pgsql-postgresql.postgres.svc.cluster.local user={} password={} dbname={} sslmode=disable".format(data.values.dbuser, data.values.dbpwd, data.values.dbname)
+  PORT: #@ "{}".format(data.values.app_port)
+
+#!  postgresql://db_user:Password_xyz@postgres-service.postgres.svc.cluster.local:<port>/<database>
+#! host=my-release-postgresql.postgres.svc.cluster.local user=postgres password=sD77xGgWz6 dbname=postgres sslmode=disable
+#! host=my-release-postgresql.test.svc.cluster.local user=postgres password=AmMi8et929 dbname=postgres sslmode=disable
