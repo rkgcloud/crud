@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: go-postgres-crud
-          image: ko://github.com/rkgcloud/crud/cmd
+          image: ko://github.com/rkgcloud/crud
           ports:
             - containerPort: #@ data.values.app_port
           env:
