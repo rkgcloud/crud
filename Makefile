@@ -85,11 +85,11 @@ tidy: ## Run go mod tidy
 .PHONY: build
 build: fmt vet tidy ## Builds the binary under bin folder
 	mkdir -p ".bin"
-	go build -o .bin/crud cmd/main.go
+	go build -o .bin/crud main.go
 
 .PHONY: run
 run: vet tidy ## Runs the service in command line
-	go run cmd/main.go
+	go run main.go
 
 .PHONY: test
 test: fmt vet ## Run unit tests only.
