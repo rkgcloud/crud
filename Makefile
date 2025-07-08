@@ -102,10 +102,10 @@ dist: test ## Creates CRUD app deployment resources
 
 .PHONY: deploy
 deploy: test dist ## Deploy CRUD to the K8s cluster specified in ~/.kube/config.
-	$(KAPP) deploy -a crud -n kube-system -f <($(KO) resolve -f <( $(YTT) -f dist/crud-app.yml)) $(KAPP_ARGS)
+	$(KAPP) deploy -a crud -n kube-public -f <($(KO) resolve -f <( $(YTT) -f dist/crud-app.yml)) $(KAPP_ARGS)
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KAPP) delete -a crud -n kube-system $(KAPP_ARGS)
+	$(KAPP) delete -a crud -n kube-public $(KAPP_ARGS)
 
 .PHONY: db-gen
 db-gen: ## Generate the postgres db deployment manifest and secrets
@@ -115,8 +115,8 @@ db-gen: ## Generate the postgres db deployment manifest and secrets
 
 .PHONY: db-deploy
 db-deploy: db-gen ## Deploys CRUD DB to the K8s cluster specified in ~/.kube/config.
-	$(KAPP) deploy -a crud-db -n kube-system -f dist/postgres.yml $(KAPP_ARGS)
+	$(KAPP) deploy -a crud-db -n kube-public -f dist/postgres.yml $(KAPP_ARGS)
 
 .PHONY: db-undeploy
 db-undeploy: ## Removes CRUD DB deployment from the K8s cluster specified in ~/.kube/config.
-	$(KAPP) delete -a crud-db -n kube-system $(KAPP_ARGS)
+	$(KAPP) delete -a crud-db -n kube-public $(KAPP_ARGS)
