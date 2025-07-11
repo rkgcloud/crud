@@ -120,3 +120,55 @@ db-deploy: db-gen ## Deploys CRUD DB to the K8s cluster specified in ~/.kube/con
 .PHONY: db-undeploy
 db-undeploy: ## Removes CRUD DB deployment from the K8s cluster specified in ~/.kube/config.
 	$(KAPP) delete -a crud-db -n kube-public $(KAPP_ARGS)
+
+##@ Local DB
+# Define colors for better output in Makefile
+RED := \033[0;41m
+GREEN := \033[0;42m
+YELLOW := \033[0;43m
+BLUE := \033[0;44m
+MAGENTA := \033[0;45m
+CYAN := \033[0;46m
+NC := \033[0m # No color
+BLUE_TEXT := \033[0;34m
+GREEN_TEXT := \033[0;32m
+CYAN_TEXT := \033[0;36m
+YELLOW_TEXT := \033[0;33m
+
+# Define PostgreSQL specific variables
+POSTGRES_CONTAINER_NAME ?= some-postgres
+POSTGRES_PASSWORD ?= mysecretpassword
+POSTGRES_PORT ?= 5432
+POSTGRES_DB_USER ?= postgres
+POSTGRES_DB_NAME ?= postgres
+POSTGRES_VOLUME ?= "postgres_data"
+
+.PHONY: run-db
+run-db: ## runs a pgsql in a container
+	@echo -e "$(CYAN_TEXT)--- Stopping and Removing existing Postgres container (if any) ---$(NC)"
+
+	@docker stop "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
+	@docker rm "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
+
+	@echo -e "$(GREEN_TEXT)--- Pulling and Running Postgres container ---$(NC)"
+	@mkdir -p "$(POSTGRES_VOLUME)"
+
+	@docker run --name "$(POSTGRES_CONTAINER_NAME)" \
+		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
+		-v "$$(pwd)/$(POSTGRES_VOLUME)":/var/lib/postgresql/data \
+		-d -p "$(POSTGRES_PORT)":"$(POSTGRES_PORT)" postgres
+
+	@echo -e "$(GREEN_TEXT)--- Postgres container started! ---$(NC)"
+	@echo -e "${GREEN_TEXT}Connection Command:${NC}"
+	@echo -e "${GREEN_TEXT}psql -h localhost -U $(POSTGRES_DB_USER) -d ${POSTGRES_DB_NAME}${NC}"
+
+	@echo ""
+	@echo -e "${GREEN_TEXT}Environment Variables for your application:${NC}"
+	@echo -e "${GREEN_TEXT}export KO_DATA_PATH=$$(pwd)/kodata${NC}" # Using $$ for shell variable expansion
+	@echo -e "${GREEN_TEXT}export DATABASE_URL=\"host=localhost user=$(POSTGRES_DB_USER) password=$(POSTGRES_PASSWORD) dbname=$(POSTGRES_DB_NAME) sslmode=disable\"${NC}"
+
+clean-db: ## tears down local pgsql container
+	@echo -e "${YELLOW_TEXT}--- Stopping and Removing Postgres container '$(POSTGRES_CONTAINER_NAME)' ---${NC}"
+	@docker stop "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
+	@docker rm "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
+	@echo -e "${YELLOW_TEXT}--- Postgres container cleaned up. ---${NC}"
