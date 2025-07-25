@@ -89,7 +89,7 @@ build: fmt vet tidy ## Builds the binary under bin folder
 
 .PHONY: run
 run: vet tidy ## Runs the service in command line
-	go run main.go
+	DEBUG="true" go run main.go
 
 .PHONY: test
 test: fmt vet ## Run unit tests only.
@@ -109,9 +109,10 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: db-gen
 db-gen: ## Generate the postgres db deployment manifest and secrets
-	helm template pgsql oci://registry-1.docker.io/bitnamicharts/postgresql --version 16.7.4 \
+	helm template pgsql oci://registry-1.docker.io/bitnamicharts/postgresql --version 16.7.21 \
 	-f <( $(YTT) -f config/helm/values.yml -v dbname=$(DB_NAME) -v dbpwd=$(DB_PWD) -v dbuser=$(DB_USER) ) \
-	--create-namespace -n postgres | $(KBLD) -f - | $(YTT) -f - -f config/database > dist/postgres.yml
+	--create-namespace -n postgres | $(KBLD) -f - | $(YTT) -f - -f config/database > /tmp/postgres-upstream.yml \
+	&& $(KBLD) relocate -f /tmp/postgres-upstream.yml -r $(KO_DOCKER_REPO)postgres > dist/postgres.yml
 
 .PHONY: db-deploy
 db-deploy: db-gen ## Deploys CRUD DB to the K8s cluster specified in ~/.kube/config.
@@ -121,7 +122,7 @@ db-deploy: db-gen ## Deploys CRUD DB to the K8s cluster specified in ~/.kube/con
 db-undeploy: ## Removes CRUD DB deployment from the K8s cluster specified in ~/.kube/config.
 	$(KAPP) delete -a crud-db -n kube-public $(KAPP_ARGS)
 
-##@ Local DB
+##@ Local Development
 # Define colors for better output in Makefile
 RED := \033[0;41m
 GREEN := \033[0;42m
@@ -158,7 +159,7 @@ run-db: ## runs a pgsql in a container
 		-v "$$(pwd)/$(POSTGRES_VOLUME)":/var/lib/postgresql/data \
 		-d -p "$(POSTGRES_PORT)":"$(POSTGRES_PORT)" postgres
 
-	@echo -e "$(GREEN_TEXT)--- Postgres container started! ---$(NC)"
+	@echo -e "${GREEN_TEXT}--- Postgres container started! ---${NC}"
 	@echo -e "${GREEN_TEXT}Connection Command:${NC}"
 	@echo -e "${GREEN_TEXT}psql -h localhost -U $(POSTGRES_DB_USER) -d ${POSTGRES_DB_NAME}${NC}"
 
@@ -168,7 +169,7 @@ run-db: ## runs a pgsql in a container
 	@echo -e "${GREEN_TEXT}export DATABASE_URL=\"host=localhost user=$(POSTGRES_DB_USER) password=$(POSTGRES_PASSWORD) dbname=$(POSTGRES_DB_NAME) sslmode=disable\"${NC}"
 
 clean-db: ## tears down local pgsql container
-	@echo -e "${YELLOW_TEXT}--- Stopping and Removing Postgres container '$(POSTGRES_CONTAINER_NAME)' ---${NC}"
+	@echo -e "${CYAN_TEXT}--- Stopping and Removing Postgres container '$(POSTGRES_CONTAINER_NAME)' ---${NC}"
 	@docker stop "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
 	@docker rm "$(POSTGRES_CONTAINER_NAME)" > /dev/null 2>&1 || true
 	@echo -e "${YELLOW_TEXT}--- Postgres container cleaned up. ---${NC}"

@@ -1,53 +1,155 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/rkgcloud/crud/pkg/api/handlers"
+	"github.com/rkgcloud/crud/pkg/api/session"
+	"github.com/rkgcloud/crud/pkg/auth"
 	"github.com/rkgcloud/crud/pkg/database"
 	"github.com/rkgcloud/crud/pkg/models"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	defaultPort   = "8080"
+	templatesPath = "templates/*.html"
+)
+
+type App struct {
+	db           *gorm.DB
+	router       *gin.Engine
+	loggedInUser *auth.LoggedInUser
+}
+
 func main() {
-	// Connect to database
+	app := &App{}
+	if err := app.Initialize(); err != nil {
+		log.Fatal("Failed to initialize application:", err)
+	}
+
+	if err := app.Run(); err != nil {
+		log.Fatal("Failed to run application:", err)
+	}
+}
+
+func (app *App) Initialize() error {
+	var err error
+
+	// Initialize database
+	if app.db, err = initializeDB(); err != nil {
+		return fmt.Errorf("database initialization failed: %w", err)
+	}
+
+	// Session store
+	secret := os.Getenv("SECRET")
+	if secret == "" {
+		secret = "secret" // only used in local dev
+	}
+	store := cookie.NewStore([]byte(secret))
+
+	debug := os.Getenv("DEBUG")
+	if debug == "true" {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.DefaultWriter = io.Discard
+		gin.DefaultErrorWriter = io.Discard
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Initialize router
+	app.router = gin.Default()
+	app.router.Use(sessions.Sessions("session", store))
+	if err = app.setupRoutes(); err != nil {
+		return fmt.Errorf("route setup failed: %w", err)
+	}
+
+	return nil
+}
+
+func initializeDB() (*gorm.DB, error) {
 	db, err := database.ConnectDB()
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		return nil, err
 	}
 
-	// Run migrations
-	err = db.AutoMigrate(&models.User{}, &models.Account{})
-	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
+	if err = db.AutoMigrate(&models.User{}, &models.Account{}); err != nil {
+		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	// Set up router
-	router := gin.Default()
+	return db, nil
+}
+
+func (app *App) authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !session.IsLoggedIn(c) {
+			log.Println("User not logged in")
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
+			return
+		}
+		c.Set("loggedInUser", session.GetLoggedInUser(c))
+		c.Next()
+	}
+}
+
+func (app *App) setupRoutes() error {
+
+	// Load templates
 	templateDir := os.Getenv("KO_DATA_PATH")
-	router.LoadHTMLGlob(path.Join(templateDir, "templates/*.html"))
+	app.router.LoadHTMLGlob(path.Join(templateDir, templatesPath))
 
-	// Serve the HTML page
-	router.GET("/", func(c *gin.Context) { handlers.Index(c, db) })
+	// static images
+	app.router.Static("/images", "./kodata/templates/images")
 
-	// Define routes
-	router.POST("/users", func(c *gin.Context) { handlers.CreateUser(c, db) })
-	router.GET("/users", func(c *gin.Context) { handlers.GetUsers(c, db) })
-	router.GET("/users/:id", func(c *gin.Context) { handlers.GetUser(c, db) })
-	router.PUT("/users/:id", func(c *gin.Context) { handlers.UpdateUser(c, db) })
-	router.DELETE("/users/:id", func(c *gin.Context) { handlers.DeleteUser(c, db) })
-	router.POST("/accounts", func(c *gin.Context) { handlers.CreateAccount(c, db) })
-	router.GET("/accounts", func(c *gin.Context) { handlers.GetAccounts(c, db) })
+	// Public routes
+	app.router.GET("/login", handlers.LoginPage)
+	app.router.GET("/auth/google", handlers.HandleGoogleLogin)
+	app.router.GET("/auth/callback", handlers.HandleGoogleCallback)
+	app.router.GET("/logout", handlers.Logout)
 
-	// Run server
+	// Default routes group
+	defaultRoutes := app.router.Group("/")
+	defaultRoutes.Use(app.authMiddleware())
+	{
+		defaultRoutes.GET("/", func(c *gin.Context) { handlers.Index(c, app.db) })
+	}
+
+	// User routes group
+	userRoutes := app.router.Group("/users")
+	userRoutes.Use(app.authMiddleware())
+	{
+		userRoutes.POST("/", func(c *gin.Context) { handlers.CreateUser(c, app.db) })
+		userRoutes.GET("/", func(c *gin.Context) { handlers.GetUsers(c, app.db) })
+		userRoutes.GET("/:id", func(c *gin.Context) { handlers.GetUser(c, app.db) })
+		userRoutes.PUT("/:id", func(c *gin.Context) { handlers.UpdateUser(c, app.db) })
+		userRoutes.DELETE("/:id", func(c *gin.Context) { handlers.DeleteUser(c, app.db) })
+	}
+
+	// Account routes group
+	accountRoutes := app.router.Group("/accounts")
+	accountRoutes.Use(app.authMiddleware())
+	{
+		accountRoutes.POST("/", func(c *gin.Context) { handlers.CreateAccount(c, app.db) })
+		accountRoutes.GET("/", func(c *gin.Context) { handlers.GetAccounts(c, app.db) })
+	}
+
+	return nil
+}
+
+func (app *App) Run() error {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = defaultPort
 	}
-	if err := router.Run(":" + port); err != nil {
-		log.Fatal(err)
-	}
+	return app.router.Run(":" + port)
 }
