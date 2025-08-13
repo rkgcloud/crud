@@ -1,4 +1,4 @@
-name: CI
+name: crud-ci
 
 on:
   push:
@@ -7,7 +7,13 @@ on:
       - '!dependabot/**'
     tags:
       - '**'
-  pull_request: []
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
 
 jobs:
 

@@ -1,18 +1,119 @@
 package handlers
 
+// https://gin-gonic.com/en/blog/news/how-to-build-one-effective-middleware/
+// https://www.youtube.com/watch?v=2GSBlB8HFDw
 import (
+	"context"
+	"encoding/json"
+	"io"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/rkgcloud/crud/pkg/api/session"
+	"github.com/rkgcloud/crud/pkg/auth"
 	"github.com/rkgcloud/crud/pkg/models"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
+const (
+	imageLogoPath = "./images/demo.png"
+)
+
+var googleOauthConfig *oauth2.Config
+
+func init() {
+	googleOauthConfig = &oauth2.Config{
+		RedirectURL:  "http://localhost:8080/auth/callback",
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),     // Get from Google Cloud Console
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"), // Get from Google Cloud Console
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
+		Endpoint:     google.Endpoint,
+	}
+}
+
+func LoginPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title":       "Login",
+		"CompanyLogo": imageLogoPath,
+	})
+	user, exist := c.Get("loggedInUser")
+	if exist {
+		profile := user.(auth.LoggedInUser)
+		log.Printf("User profile from login page: %s\n", profile.Name)
+	}
+
+	c.HTML(http.StatusOK, "layout.html", gin.H{
+		"title": "Login",
+	})
+}
+
+// HandleGoogleLogin redirects to Google for authentication
+func HandleGoogleLogin(c *gin.Context) {
+	url := googleOauthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	c.Redirect(http.StatusFound, url)
+}
+
+// HandleGoogleCallback handles the response from Google
+func HandleGoogleCallback(c *gin.Context) {
+	code := c.Query("code")
+	token, err := googleOauthConfig.Exchange(context.Background(), code)
+	if err != nil {
+		log.Printf("oauthConf.Exchange() failed: %s\n", err)
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+
+	client := googleOauthConfig.Client(context.Background(), token)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		log.Printf("client.Get() failed: %s\n", err)
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+	defer resp.Body.Close()
+
+	data, _ := io.ReadAll(resp.Body)
+	var profile auth.LoggedInUser
+	if err := json.Unmarshal(data, &profile); err != nil {
+		log.Printf("json.Unmarshal() failed: %s\n", err)
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+
+	log.Printf("Auth profile: %s\n", string(data))
+
+	// SetLoggedInUser user profile in the session
+	if err := session.SetLoggedInUser(c, &profile); err != nil {
+		log.Printf("Failed to save user profile in session: %s\n", err)
+		c.Redirect(http.StatusFound, "/")
+	}
+
+	c.Redirect(http.StatusFound, "/")
+}
+
+func Logout(c *gin.Context) {
+	if err := session.DeleteLoggedInUser(c); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete user"})
+		return
+	}
+	c.Redirect(http.StatusFound, "/")
+}
+
 // Index Renders the index page
 func Index(c *gin.Context, db *gorm.DB) {
+	var profile auth.LoggedInUser
+	user, exist := c.Get("loggedInUser")
+	if exist {
+		profile = user.(auth.LoggedInUser)
+		log.Printf("User profile from login page: %s\n", profile.Name)
+	}
 
 	var users []models.User
 	pageData := gin.H{
@@ -24,6 +125,14 @@ func Index(c *gin.Context, db *gorm.DB) {
 
 	pageData["Records"] = users
 	c.HTML(http.StatusOK, "index.html", pageData)
+	c.HTML(http.StatusOK, "layout.html", gin.H{
+		"title":      "Users",
+		"IsLoggedIn": exist,
+		"Name":       profile.Name,
+		"Email":      profile.Email,
+		"Phone":      profile.Phone,
+		"Picture":    profile.Picture,
+	})
 }
 
 // CreateUser creates a new user in the database

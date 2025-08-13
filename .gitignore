@@ -26,3 +26,4 @@ go.work.sum
 .idea
 .bin
 tmp
+postgres_data

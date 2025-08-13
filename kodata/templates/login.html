@@ -1,0 +1,56 @@
+{{ define "login.html" }}
+<div class="container d-flex justify-content-center align-items-center min-vh-100 py-5">
+    <div class="row w-100 justify-content-center">
+        <div class="col-md-9 col-lg-7">
+            <div class="card shadow-lg p-4 p-md-5 border-0 rounded-lg">
+                <div class="row">
+                    <div class="col-md-6 border-end pr-md-4">
+                        <div class="text-center mb-4">
+                            <!-- Replace with your actual logo -->
+                            <img src="{{ .CompanyLogo }}" alt="Koral Solution Logo" class="img-fluid mb-3" style="max-height: 60px;">
+                            <h2 class="h4 font-weight-bold mb-2">Demo Solution</h2>
+<!--                            <p class="text-muted mb-4">Log in to your account</p>-->
+                        </div>
+                        <form>
+                            <div class="mb-3">
+<!--                                <label for="email" class="form-label text-uppercase small font-weight-bold">Email Address</label>-->
+                                <input type="email" class="form-control form-control-lg" id="email" placeholder="Enter your email">
+                            </div>
+                            <div class="mb-4">
+<!--                                <label for="password" class="form-label text-uppercase small font-weight-bold">Password</label>-->
+                                <input type="password" class="form-control form-control-lg" id="password" placeholder="Enter your password">
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-dark btn-lg fw-bold">LOG IN</button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="#" class="text-decoration-none text-muted small">Forgot Password?</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="col-md-6 pl-md-4">
+                        <div class="d-flex align-items-center justify-content-center mb-4 mt-4 mt-md-0">
+                            <hr class="w-25 border-top border-dark-subtle">
+                            <span class="mx-3 text-muted small text-uppercase">or</span>
+                            <hr class="w-25 border-top border-dark-subtle">
+                        </div>
+                        <div class="d-grid gap-3">
+                            <a href="/auth/google" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center fw-bold">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-google me-2" viewBox="0 0 16 16">
+                                    <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.25C2.894 8.168 2.846 9.057 2.96 9.855c.117.818.52 1.545 1.096 2.133a4.78 4.78 0 0 0 2.223 1.43c.48.135.986.196 1.488.196.47 0 .929-.057 1.365-.171.465-.121.895-.296 1.288-.535.43-.26.78-.59 1.045-1.005.265-.415.426-.902.426-1.415v-.073c0-.495-.145-.965-.426-1.355-.28-.39-.68-.69-1.12-.865a4.139 4.139 0 0 0-1.41-.33H8v-2.1h7.545z"/>
+                                </svg>
+                                Continue with Google
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-5 pt-3 border-top">
+                    <p class="small text-muted mb-0">By logging in, you agree to our <a href="#" class="text-decoration-none text-primary">Terms of Service</a> and <a href="#" class="text-decoration-none text-primary">Privacy Policy</a>.</p>
+                    <p class="small text-muted mt-2">&copy; Copyright 2025, KoRa Solutions&reg;. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
