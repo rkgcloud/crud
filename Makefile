@@ -99,6 +99,9 @@ test: fmt vet ## Run unit tests only.
 dist: test ## Creates CRUD app deployment resources
 	$(YTT)  -f config/app/ -v dbname=$(DB_NAME) -v dbpwd=$(DB_PWD) -v dbuser=$(DB_USER) > dist/crud-app.yml
 
+.PHONY: image
+image: dist ## Builds an oci image, requires KO_DOCKER_REPO
+	$(KO) resolve -f <( $(YTT) -f dist/crud-app.yml) | yq '.spec.template.spec.containers[].image'
 
 .PHONY: deploy
 deploy: test dist ## Deploy CRUD to the K8s cluster specified in ~/.kube/config.

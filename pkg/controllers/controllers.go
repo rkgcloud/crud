@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 // https://gin-gonic.com/en/blog/news/how-to-build-one-effective-middleware/
 // https://www.youtube.com/watch?v=2GSBlB8HFDw
@@ -10,15 +10,17 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/rkgcloud/crud/pkg/api/session"
 	"github.com/rkgcloud/crud/pkg/auth"
 	"github.com/rkgcloud/crud/pkg/models"
+	"github.com/rkgcloud/crud/pkg/session"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	"github.com/gin-gonic/gin"
+
 	"gorm.io/gorm"
 )
 
@@ -210,24 +212,92 @@ func DeleteUser(c *gin.Context, db *gorm.DB) {
 
 // CreateAccount creates a new account in the database
 func CreateAccount(c *gin.Context, db *gorm.DB) {
-	var account models.Account
-	if err := c.ShouldBindJSON(&account); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	userid, err := strconv.ParseUint(c.PostForm("user-id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
 		return
+	}
+
+	account := models.Account{
+		UserID: uint(userid),
+		Name:   c.PostForm("name"),
+	}
+	if c.PostForm("balance") != "" {
+		account.Balance, err = strconv.ParseFloat(c.PostForm("balance"), 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid balance data"})
+			return
+		}
 	}
 	if err := db.Create(&account).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create account"})
 		return
 	}
+	c.Redirect(http.StatusFound, "/accounts")
 }
 
 // GetAccounts retrieves all accounts from the database
 func GetAccounts(c *gin.Context, db *gorm.DB) {
+	var profile auth.LoggedInUser
+	user, exist := c.Get("loggedInUser")
+	if exist {
+		profile = user.(auth.LoggedInUser)
+		log.Printf("User profile from login page: %s\n", profile.Name)
+	}
+
 	var accounts []models.Account
-	if err := db.Find(&accounts).Error; err != nil {
+	pageData := gin.H{
+		"title": "Users",
+	}
+
+	if err := db.Order("created_at DESC").Find(&accounts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve accounts"})
 	}
-	c.JSON(http.StatusOK, accounts)
+	pageData["Accounts"] = accounts
+	c.HTML(http.StatusOK, "accounts.html", pageData)
+	c.HTML(http.StatusOK, "layout.html", gin.H{
+		"title":      "Users",
+		"IsLoggedIn": exist,
+		"Name":       profile.Name,
+		"Email":      profile.Email,
+		"Phone":      profile.Phone,
+		"Picture":    profile.Picture,
+	})
+}
+
+func UpdateAccount(c *gin.Context, db *gorm.DB) {
+	accountIDValue, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account id"})
+		return
+	}
+	if accountIDValue == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account id"})
+		return
+	}
+	userid, err := strconv.ParseUint(c.PostForm("user-id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+		return
+	}
+
+	account := models.Account{
+		UserID: uint(userid),
+		Name:   c.PostForm("name"),
+	}
+
+	account.Balance, err = strconv.ParseFloat(c.PostForm("balance"), 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid balance data"})
+		return
+	}
+
+	account.ID = uint(accountIDValue)
+	if err := db.Save(&account).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update account"})
+		return
+	}
+	c.Redirect(http.StatusFound, "/accounts")
 }
 
 func newAccountNumber() uint {

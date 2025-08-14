@@ -10,11 +10,11 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/rkgcloud/crud/pkg/api/handlers"
-	"github.com/rkgcloud/crud/pkg/api/session"
 	"github.com/rkgcloud/crud/pkg/auth"
+	"github.com/rkgcloud/crud/pkg/controllers"
 	"github.com/rkgcloud/crud/pkg/database"
 	"github.com/rkgcloud/crud/pkg/models"
+	"github.com/rkgcloud/crud/pkg/session"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -112,35 +112,36 @@ func (app *App) setupRoutes() error {
 	app.router.Static("/images", "./kodata/templates/images")
 
 	// Public routes
-	app.router.GET("/login", handlers.LoginPage)
-	app.router.GET("/auth/google", handlers.HandleGoogleLogin)
-	app.router.GET("/auth/callback", handlers.HandleGoogleCallback)
-	app.router.GET("/logout", handlers.Logout)
+	app.router.GET("/login", controllers.LoginPage)
+	app.router.GET("/auth/google", controllers.HandleGoogleLogin)
+	app.router.GET("/auth/callback", controllers.HandleGoogleCallback)
+	app.router.GET("/logout", controllers.Logout)
 
 	// Default routes group
 	defaultRoutes := app.router.Group("/")
 	defaultRoutes.Use(app.authMiddleware())
 	{
-		defaultRoutes.GET("/", func(c *gin.Context) { handlers.Index(c, app.db) })
+		defaultRoutes.GET("/", func(c *gin.Context) { controllers.Index(c, app.db) })
 	}
 
 	// User routes group
 	userRoutes := app.router.Group("/users")
 	userRoutes.Use(app.authMiddleware())
 	{
-		userRoutes.POST("/", func(c *gin.Context) { handlers.CreateUser(c, app.db) })
-		userRoutes.GET("/", func(c *gin.Context) { handlers.GetUsers(c, app.db) })
-		userRoutes.GET("/:id", func(c *gin.Context) { handlers.GetUser(c, app.db) })
-		userRoutes.PUT("/:id", func(c *gin.Context) { handlers.UpdateUser(c, app.db) })
-		userRoutes.DELETE("/:id", func(c *gin.Context) { handlers.DeleteUser(c, app.db) })
+		userRoutes.POST("/", func(c *gin.Context) { controllers.CreateUser(c, app.db) })
+		userRoutes.GET("/", func(c *gin.Context) { controllers.GetUsers(c, app.db) })
+		userRoutes.GET("/:id", func(c *gin.Context) { controllers.GetUser(c, app.db) })
+		userRoutes.PUT("/:id", func(c *gin.Context) { controllers.UpdateUser(c, app.db) })
+		userRoutes.DELETE("/:id", func(c *gin.Context) { controllers.DeleteUser(c, app.db) })
 	}
 
 	// Account routes group
 	accountRoutes := app.router.Group("/accounts")
 	accountRoutes.Use(app.authMiddleware())
 	{
-		accountRoutes.POST("/", func(c *gin.Context) { handlers.CreateAccount(c, app.db) })
-		accountRoutes.GET("/", func(c *gin.Context) { handlers.GetAccounts(c, app.db) })
+		accountRoutes.POST("/", func(c *gin.Context) { controllers.CreateAccount(c, app.db) })
+		accountRoutes.GET("/", func(c *gin.Context) { controllers.GetAccounts(c, app.db) })
+		accountRoutes.POST("/update/:id", func(c *gin.Context) { controllers.UpdateAccount(c, app.db) })
 	}
 
 	return nil
