@@ -10,11 +10,11 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/rkgcloud/crud/pkg/api/handlers"
-	"github.com/rkgcloud/crud/pkg/api/session"
 	"github.com/rkgcloud/crud/pkg/auth"
 	"github.com/rkgcloud/crud/pkg/database"
+	"github.com/rkgcloud/crud/pkg/handlers"
 	"github.com/rkgcloud/crud/pkg/models"
+	"github.com/rkgcloud/crud/pkg/session"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -141,6 +141,7 @@ func (app *App) setupRoutes() error {
 	{
 		accountRoutes.POST("/", func(c *gin.Context) { handlers.CreateAccount(c, app.db) })
 		accountRoutes.GET("/", func(c *gin.Context) { handlers.GetAccounts(c, app.db) })
+		accountRoutes.POST("/update/:id", func(c *gin.Context) { handlers.UpdateAccount(c, app.db) })
 	}
 
 	return nil
