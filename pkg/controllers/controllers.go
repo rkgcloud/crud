@@ -1,4 +1,4 @@
-package handlers
+package controllers
 
 // https://gin-gonic.com/en/blog/news/how-to-build-one-effective-middleware/
 // https://www.youtube.com/watch?v=2GSBlB8HFDw

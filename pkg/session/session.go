@@ -29,6 +29,10 @@ func GetLoggedInUser(c *gin.Context) auth.LoggedInUser {
 	if user == nil {
 		return auth.LoggedInUser{}
 	}
+	// Handle both pointer and value types
+	if userPtr, ok := user.(*auth.LoggedInUser); ok {
+		return *userPtr
+	}
 	return user.(auth.LoggedInUser)
 }
 

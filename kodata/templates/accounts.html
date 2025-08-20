@@ -54,6 +54,50 @@
             </tbody>
         </table>
         {{else}}
+        <!-- Pagination Controls -->
+        <nav aria-label="Account pagination">
+            <ul class="pagination justify-content-center">
+                {{if gt .Pagination.CurrentPage 1}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{sub .Pagination.CurrentPage 1}}&size={{.Pagination.PageSize}}">Previous</a>
+                </li>
+                {{else}}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {{end}}
+
+                {{range .Pagination.Pages}}
+                <li class="page-item {{if eq . $.Pagination.CurrentPage}}active{{end}}">
+                    <a class="page-link" href="?page={{.}}&size={{$.Pagination.PageSize}}">{{.}}</a>
+                </li>
+                {{end}}
+
+                {{if lt .Pagination.CurrentPage .Pagination.TotalPages}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{add .Pagination.CurrentPage 1}}&size={{.Pagination.PageSize}}">Next</a>
+                </li>
+                {{else}}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {{end}}
+            </ul>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted">
+                Showing {{.Pagination.Start}} to {{.Pagination.End}} of {{.Pagination.TotalItems}} accounts
+            </small>
+            <div>
+                <label for="pageSize" class="form-label me-2">Items per page:</label>
+                <select id="pageSize" class="form-select form-select-sm d-inline-block w-auto" onchange="changePageSize(this.value)">
+                    <option value="10" {{if eq .Pagination.PageSize 10}}selected{{end}}>10</option>
+                    <option value="25" {{if eq .Pagination.PageSize 25}}selected{{end}}>25</option>
+                    <option value="50" {{if eq .Pagination.PageSize 50}}selected{{end}}>50</option>
+                </select>
+            </div>
+        </div>
         <p class="text-muted">No Account found.</p>
         {{end}}
     </div>

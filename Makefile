@@ -93,7 +93,7 @@ run: vet tidy ## Runs the service in command line
 
 .PHONY: test
 test: fmt vet ## Run unit tests only.
-	go test ./... -short -coverprofile cover.out
+	go test -v ./... -short -coverprofile cover.out
 
 .PHONY: dist
 dist: test ## Creates CRUD app deployment resources
