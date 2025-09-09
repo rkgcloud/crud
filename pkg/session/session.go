@@ -11,6 +11,7 @@ import (
 
 const (
 	loggedUser = "loggedInUser"
+	stateToken = "stateToken"
 )
 
 func init() {
@@ -40,4 +41,28 @@ func DeleteLoggedInUser(c *gin.Context) error {
 
 func IsLoggedIn(c *gin.Context) bool {
 	return GetLoggedInUser(c).ID != ""
+}
+
+// SetStateToken stores the OAuth state token in the session
+func SetStateToken(c *gin.Context, token string) error {
+	s := sessions.Default(c)
+	s.Set(stateToken, token)
+	return s.Save()
+}
+
+// GetStateToken retrieves the OAuth state token from the session
+func GetStateToken(c *gin.Context) string {
+	s := sessions.Default(c)
+	token := s.Get(stateToken)
+	if token == nil {
+		return ""
+	}
+	return token.(string)
+}
+
+// DeleteStateToken removes the OAuth state token from the session
+func DeleteStateToken(c *gin.Context) error {
+	s := sessions.Default(c)
+	s.Delete(stateToken)
+	return s.Save()
 }
