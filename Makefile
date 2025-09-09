@@ -78,6 +78,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: lint
+lint: ## Run linting checks (fallback script).
+	./hack/lint.sh
+
 .PHONY: tidy
 tidy: ## Run go mod tidy
 	go mod tidy -v
@@ -94,6 +98,13 @@ run: vet tidy ## Runs the service in command line
 .PHONY: test
 test: fmt vet ## Run unit tests only.
 	go test ./... -short -coverprofile cover.out
+
+.PHONY: test-integration
+test-integration: build ## Run integration tests (requires running application).
+	./hack/integration-test.sh
+
+.PHONY: test-all
+test-all: test test-integration ## Run all tests (unit and integration).
 
 .PHONY: dist
 dist: test ## Creates CRUD app deployment resources

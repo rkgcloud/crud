@@ -27,3 +27,5 @@ go.work.sum
 .bin
 tmp
 postgres_data
+.cursor
+IMPROVEMENTS.md
