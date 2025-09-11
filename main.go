@@ -156,6 +156,9 @@ func (app *App) setupRouter() error {
 	templateDir := os.Getenv("KO_DATA_PATH")
 	if templateDir != "" {
 		app.router.LoadHTMLGlob(path.Join(templateDir, templatesPath))
+	} else {
+		// Fallback to local kodata directory for development
+		app.router.LoadHTMLGlob("./kodata/templates/*.html")
 	}
 
 	// Static files
@@ -181,6 +184,7 @@ func (app *App) setupRouter() error {
 	protected.Use(app.authMiddleware())
 	{
 		protected.GET("/", func(c *gin.Context) { controllers.Index(c, app.db) })
+		protected.GET("/accounts", func(c *gin.Context) { controllers.GetAccounts(c, app.db) })
 	}
 
 	// User routes group

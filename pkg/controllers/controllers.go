@@ -241,15 +241,14 @@ func Index(c *gin.Context, db *gorm.DB) {
 	}
 
 	pageData["Records"] = users
-	c.HTML(http.StatusOK, "index.html", pageData)
-	c.HTML(http.StatusOK, "layout.html", gin.H{
-		"title":      "Users",
-		"IsLoggedIn": exist,
-		"Name":       profile.Name,
-		"Email":      profile.Email,
-		"Phone":      profile.Phone,
-		"Picture":    profile.Picture,
-	})
+	pageData["IsLoggedIn"] = exist
+	pageData["Name"] = profile.Name
+	pageData["Email"] = profile.Email
+	pageData["Phone"] = profile.Phone
+	pageData["Picture"] = profile.Picture
+	pageData["currentPage"] = "home"
+
+	c.HTML(http.StatusOK, "layout.html", pageData)
 }
 
 // CreateUser creates a new user in the database
@@ -426,22 +425,21 @@ func GetAccounts(c *gin.Context, db *gorm.DB) {
 
 	var accounts []models.Account
 	pageData := gin.H{
-		"title": "Users",
+		"title": "Accounts",
 	}
 
 	if err := db.Order("created_at DESC").Find(&accounts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve accounts"})
 	}
 	pageData["Accounts"] = accounts
-	c.HTML(http.StatusOK, "accounts.html", pageData)
-	c.HTML(http.StatusOK, "layout.html", gin.H{
-		"title":      "Users",
-		"IsLoggedIn": exist,
-		"Name":       profile.Name,
-		"Email":      profile.Email,
-		"Phone":      profile.Phone,
-		"Picture":    profile.Picture,
-	})
+	pageData["IsLoggedIn"] = exist
+	pageData["Name"] = profile.Name
+	pageData["Email"] = profile.Email
+	pageData["Phone"] = profile.Phone
+	pageData["Picture"] = profile.Picture
+	pageData["currentPage"] = "accounts"
+
+	c.HTML(http.StatusOK, "layout.html", pageData)
 }
 
 func UpdateAccount(c *gin.Context, db *gorm.DB) {
