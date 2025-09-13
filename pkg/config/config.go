@@ -90,7 +90,7 @@ func Load() (*Config, error) {
 			RateLimitPerMinute: getEnvInt("RATE_LIMIT_PER_MINUTE", 60),
 			RateLimitBurst:     getEnvInt("RATE_LIMIT_BURST", 10),
 			AllowedOrigins:     getEnvSlice("ALLOWED_ORIGINS", []string{"http://localhost:8080"}),
-			CSPPolicy:          getEnv("CSP_POLICY", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"),
+			CSPPolicy:          getEnv("CSP_POLICY", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: https:"),
 		},
 	}
 
