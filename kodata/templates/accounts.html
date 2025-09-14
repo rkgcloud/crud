@@ -52,12 +52,12 @@
                     {{range .Accounts}}
                     <tr>
                         <td><input type="checkbox" class="account-checkbox" data-id="{{.ID}}" data-user-id="{{.UserID}}"
-                                   data-name="{{.Name}}" data-balance="{{printf " %.2f" .Balance}}">
+                                   data-name="{{.Name}}" data-balance="{{.Balance}}">
                         </td>
                         <td>{{.ID}}</td>
                         <td>{{.UserID}}</td>
                         <td>{{.Name}}</td>
-                        <td class="text-end">${{printf "%.2f" .Balance}}</td>
+                        <td class="text-end">${{.Balance}}</td>
                     </tr>
                     {{end}}
                     </tbody>
