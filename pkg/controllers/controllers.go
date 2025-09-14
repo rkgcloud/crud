@@ -390,27 +390,74 @@ func DeleteUser(c *gin.Context, db *gorm.DB) {
 
 // CreateAccount creates a new account in the database
 func CreateAccount(c *gin.Context, db *gorm.DB) {
-	userid, err := strconv.ParseUint(c.PostForm("user-id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+	name := strings.TrimSpace(c.PostForm("name"))
+	userIDStr := strings.TrimSpace(c.PostForm("user-id"))
+	balanceStr := strings.TrimSpace(c.PostForm("balance"))
+
+	// Validate account name
+	if err := validateName(name); err != nil {
+		session.SetFlashError(c, err.Error())
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+
+	// Validate and parse user ID
+	userid, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil || userid == 0 {
+		session.SetFlashError(c, "Invalid user ID. Please enter a valid user ID.")
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+
+	// Check if user exists
+	var userExists bool
+	if err := db.Model(&models.User{}).Select("count(*) > 0").Where("id = ?", userid).Find(&userExists).Error; err != nil {
+		log.Printf("Error checking user existence: %v", err)
+		session.SetFlashError(c, "Error validating user. Please try again.")
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+	if !userExists {
+		session.SetFlashError(c, fmt.Sprintf("User with ID %d does not exist.", userid))
+		c.Redirect(http.StatusFound, "/accounts")
 		return
 	}
 
 	account := models.Account{
 		UserID: uint(userid),
-		Name:   c.PostForm("name"),
+		Name:   name,
 	}
-	if c.PostForm("balance") != "" {
-		account.Balance, err = strconv.ParseFloat(c.PostForm("balance"), 64)
+
+	// Parse and validate balance if provided
+	if balanceStr != "" {
+		balance, err := strconv.ParseFloat(balanceStr, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid balance data"})
+			session.SetFlashError(c, "Invalid balance format. Please enter a valid number.")
+			c.Redirect(http.StatusFound, "/accounts")
 			return
 		}
+		if err := validateBalance(balance); err != nil {
+			session.SetFlashError(c, err.Error())
+			c.Redirect(http.StatusFound, "/accounts")
+			return
+		}
+		account.Balance = balance
 	}
+
+	// Create the account
 	if err := db.Create(&account).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create account"})
+		log.Printf("Failed to create account from IP %s: %v", c.ClientIP(), err)
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "unique") {
+			session.SetFlashError(c, "An account with this name already exists for this user.")
+		} else {
+			session.SetFlashError(c, "Could not create account. Please try again.")
+		}
+		c.Redirect(http.StatusFound, "/accounts")
 		return
 	}
+
+	log.Printf("Account created: %s for User ID %d by IP: %s", account.Name, account.UserID, c.ClientIP())
+	session.SetFlashSuccess(c, fmt.Sprintf("Account '%s' created successfully!", account.Name))
 	c.Redirect(http.StatusFound, "/accounts")
 }
 
@@ -423,15 +470,30 @@ func GetAccounts(c *gin.Context, db *gorm.DB) {
 		log.Printf("User profile from login page: %s\n", profile.Name)
 	}
 
+	// Get flash messages
+	flashMessages := session.GetAllFlashMessages(c)
+
 	var accounts []models.Account
 	pageData := gin.H{
 		"title": "Accounts",
 	}
 
 	if err := db.Order("created_at DESC").Find(&accounts).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve accounts"})
+		log.Printf("Error retrieving accounts: %v", err)
+		// Set error in flash message instead of returning JSON
+		session.SetFlashError(c, "Could not retrieve accounts. Please try again.")
+		pageData["Accounts"] = []models.Account{} // Empty slice to avoid template errors
+	} else {
+		pageData["Accounts"] = accounts
 	}
-	pageData["Accounts"] = accounts
+
+	// Add flash messages to page data
+	pageData["FlashError"] = flashMessages.Error
+	pageData["FlashSuccess"] = flashMessages.Success
+	pageData["FlashWarning"] = flashMessages.Warning
+	pageData["FlashInfo"] = flashMessages.Info
+
+	// User profile data
 	pageData["IsLoggedIn"] = exist
 	pageData["Name"] = profile.Name
 	pageData["Email"] = profile.Email
@@ -444,36 +506,66 @@ func GetAccounts(c *gin.Context, db *gorm.DB) {
 
 func UpdateAccount(c *gin.Context, db *gorm.DB) {
 	accountIDValue, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account id"})
-		return
-	}
-	if accountIDValue == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account id"})
-		return
-	}
-	userid, err := strconv.ParseUint(c.PostForm("user-id"), 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+	if err != nil || accountIDValue == 0 {
+		session.SetFlashError(c, "Invalid account ID.")
+		c.Redirect(http.StatusFound, "/accounts")
 		return
 	}
 
-	account := models.Account{
-		UserID: uint(userid),
-		Name:   c.PostForm("name"),
-	}
+	name := strings.TrimSpace(c.PostForm("name"))
+	userIDStr := strings.TrimSpace(c.PostForm("user-id"))
+	balanceStr := strings.TrimSpace(c.PostForm("balance"))
 
-	account.Balance, err = strconv.ParseFloat(c.PostForm("balance"), 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid balance data"})
+	// Validate account name
+	if err := validateName(name); err != nil {
+		session.SetFlashError(c, err.Error())
+		c.Redirect(http.StatusFound, "/accounts")
 		return
 	}
 
-	account.ID = uint(accountIDValue)
+	// Validate and parse user ID
+	userid, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil || userid == 0 {
+		session.SetFlashError(c, "Invalid user ID. Please enter a valid user ID.")
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+
+	// Parse and validate balance
+	balance, err := strconv.ParseFloat(balanceStr, 64)
+	if err != nil {
+		session.SetFlashError(c, "Invalid balance format. Please enter a valid number.")
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+	if err := validateBalance(balance); err != nil {
+		session.SetFlashError(c, err.Error())
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+
+	// First, get the existing account to ensure it exists
+	var account models.Account
+	if err := db.First(&account, accountIDValue).Error; err != nil {
+		session.SetFlashError(c, "Account not found.")
+		c.Redirect(http.StatusFound, "/accounts")
+		return
+	}
+
+	// Update the account fields
+	account.UserID = uint(userid)
+	account.Name = name
+	account.Balance = balance
+
 	if err := db.Save(&account).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update account"})
+		log.Printf("Failed to update account from IP %s: %v", c.ClientIP(), err)
+		session.SetFlashError(c, "Could not update account. Please try again.")
+		c.Redirect(http.StatusFound, "/accounts")
 		return
 	}
+
+	log.Printf("Account updated: ID %d, Name %s for User ID %d by IP: %s", account.ID, account.Name, account.UserID, c.ClientIP())
+	session.SetFlashSuccess(c, fmt.Sprintf("Account '%s' updated successfully!", account.Name))
 	c.Redirect(http.StatusFound, "/accounts")
 }
 
