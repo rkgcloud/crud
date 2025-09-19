@@ -2,6 +2,39 @@
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-9">
         <h1 class="mb-4">Accounts Management</h1>
+        
+        <!-- Flash Messages -->
+        {{if .FlashError}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Error:</strong> {{.FlashError}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+        
+        {{if .FlashSuccess}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong>Success:</strong> {{.FlashSuccess}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+        
+        {{if .FlashWarning}}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Warning:</strong> {{.FlashWarning}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+        
+        {{if .FlashInfo}}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Info:</strong> {{.FlashInfo}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
 
         <div class="card mb-4">
             <div class="card-header">
@@ -52,12 +85,12 @@
                     {{range .Accounts}}
                     <tr>
                         <td><input type="checkbox" class="account-checkbox" data-id="{{.ID}}" data-user-id="{{.UserID}}"
-                                   data-name="{{.Name}}" data-balance="{{printf " %.2f" .Balance}}">
+                                   data-name="{{.Name}}" data-balance="{{.Balance}}">
                         </td>
                         <td>{{.ID}}</td>
                         <td>{{.UserID}}</td>
                         <td>{{.Name}}</td>
-                        <td class="text-end">${{printf "%.2f" .Balance}}</td>
+                        <td class="text-end">${{.Balance}}</td>
                     </tr>
                     {{end}}
                     </tbody>
@@ -68,11 +101,6 @@
             </div>
         </div>
 
-        {{if .Error}}
-        <div class="alert alert-danger mt-3" role="alert">
-            Error: {{.Error}}
-        </div>
-        {{end}}
     </div>
 </div>
 
