@@ -1,11 +1,11 @@
 {{ define "index-content" }}
 <div class="row justify-content-center">
     <div class="col-lg-10 col-xl-9">
-        <h1 class="mb-4">User Management</h1>
+        <h1 class="mb-4">Merchant Account Management</h1>
 
         <div class="card mb-4">
             <div class="card-header">
-                Add New User
+                Add New Merchant Account
             </div>
             <div class="card-body">
                 <form action="/users" method="post">
@@ -28,7 +28,7 @@
 
         <div class="card">
             <div class="card-header">
-                List of Records
+                List of Merchant Accounts
             </div>
             <div class="card-body">
                 {{if .Records}}
