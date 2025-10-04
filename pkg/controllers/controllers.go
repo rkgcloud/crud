@@ -569,6 +569,27 @@ func UpdateAccount(c *gin.Context, db *gorm.DB) {
 	c.Redirect(http.StatusFound, "/accounts")
 }
 
+// ImagePage renders the image display page
+func ImagePage(c *gin.Context) {
+	var profile auth.LoggedInUser
+	user, exist := c.Get("loggedInUser")
+	if exist {
+		profile = user.(auth.LoggedInUser)
+	}
+
+	pageData := gin.H{
+		"title":       "SOTM September 2025",
+		"IsLoggedIn":  exist,
+		"Name":        profile.Name,
+		"Email":       profile.Email,
+		"Phone":       profile.Phone,
+		"Picture":     profile.Picture,
+		"currentPage": "image",
+	}
+
+	c.HTML(http.StatusOK, "layout.html", pageData)
+}
+
 func newAccountNumber() uint {
 	// Use crypto/rand for better security
 	bytes := make([]byte, 4)

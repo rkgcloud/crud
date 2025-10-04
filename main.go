@@ -185,6 +185,7 @@ func (app *App) setupRouter() error {
 	{
 		protected.GET("/", func(c *gin.Context) { controllers.Index(c, app.db) })
 		protected.GET("/accounts", func(c *gin.Context) { controllers.GetAccounts(c, app.db) })
+		protected.GET("/image", controllers.ImagePage)
 	}
 
 	// User routes group
