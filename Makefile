@@ -123,7 +123,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: db-gen
 db-gen: ## Generate the postgres db deployment manifest and secrets
-	helm template pgsql oci://registry-1.docker.io/bitnamicharts/postgresql --version 16.7.21 \
+	helm template pgsql oci://registry-1.docker.io/bitnamicharts/postgresql --version 18.1.4 \
 	-f <( $(YTT) -f config/helm/values.yml -v dbname=$(DB_NAME) -v dbpwd=$(DB_PWD) -v dbuser=$(DB_USER) ) \
 	--create-namespace -n postgres | $(KBLD) -f - | $(YTT) -f - -f config/database > /tmp/postgres-upstream.yml \
 	&& $(KBLD) relocate -f /tmp/postgres-upstream.yml -r $(KO_DOCKER_REPO)postgres > dist/postgres.yml
@@ -170,7 +170,7 @@ run-db: ## runs a pgsql in a container
 
 	@docker run --name "$(POSTGRES_CONTAINER_NAME)" \
 		-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
-		-v "$$(pwd)/$(POSTGRES_VOLUME)":/var/lib/postgresql/data \
+		-v "$$(pwd)/$(POSTGRES_VOLUME)":/var/lib/postgresql/18/data \
 		-d -p "$(POSTGRES_PORT)":"$(POSTGRES_PORT)" postgres
 
 	@echo -e "${GREEN_TEXT}--- Postgres container started! ---${NC}"
