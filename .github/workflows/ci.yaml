@@ -151,8 +151,10 @@ jobs:
       
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
+        with:
+          repo-checkout: false
 
-  # integration:
+          # integration:
   #   name: Integration Tests
   #   runs-on: ubuntu-latest
   #   needs: [build]
