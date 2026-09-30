@@ -1,6 +1,6 @@
 module github.com/rkgcloud/crud
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/gin-contrib/cors v1.7.7
@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/stretchr/testify v1.12.1
 	github.com/ulule/limiter/v3 v3.11.2
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2
